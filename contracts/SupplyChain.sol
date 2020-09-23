@@ -12,10 +12,12 @@ contract SupplyChain {
   address owner;
 
   /* Add a variable called skuCount to track the most recent sku # */
+  uint sku;
 
   /* Add a line that creates a public mapping that maps the SKU (a number) to an Item.
      Call this mappings items
   */
+  mapping (uint sku => Item item) public items;
 
   /* Add a line that creates an enum called State. This should have 4 states
     ForSale
@@ -56,10 +58,10 @@ contract SupplyChain {
    so checking that Item.State == ForSale is not sufficient to check that an Item is for sale.
    Hint: What item properties will be non-zero when an Item has been added?
    */
-  modifier forSale
-  modifier sold
-  modifier shipped
-  modifier received
+  modifier forSale () { _;}
+  modifier sold () { _;}
+  modifier shipped () { _;}
+  modifier received () { _;}
 
 
   constructor() public {
