@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 const errorString = "VM Exception while processing transaction: ";
 
 async function tryCatch(promise, reason) {

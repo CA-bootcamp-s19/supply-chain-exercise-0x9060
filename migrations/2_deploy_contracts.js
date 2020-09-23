@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 //var SimpleBank = artifacts.require("./SimpleBank.sol");
 var SupplyChain = artifacts.require("./SupplyChain.sol");
 
