@@ -12,10 +12,12 @@ contract SupplyChain {
   address owner;
 
   /* Add a variable called skuCount to track the most recent sku # */
+  uint skuCount;
 
   /* Add a line that creates a public mapping that maps the SKU (a number) to an Item.
      Call this mappings items
   */
+  mapping (uint => Item) public items;
 
   /* Add a line that creates an enum called State. This should have 4 states
     ForSale
@@ -24,6 +26,7 @@ contract SupplyChain {
     Received
     (declaring them in this order is important for testing)
   */
+  enum State { ForSale, Sold, Shipped, Received }
 
   /* Create a struct named Item.
     Here, add a name, sku, price, state, seller, and buyer
@@ -31,10 +34,22 @@ contract SupplyChain {
     if you need help you can ask around :)
     Be sure to add "payable" to addresses that will be handling value transfer
   */
+  struct Item {
+    string name;
+    uint sku;
+    uint price;
+    State state;
+    address payable seller;
+    address payable buyer;
+  }
 
   /* Create 4 events with the same name as each possible State (see above)
     Prefix each event with "Log" for clarity, so the forSale event will be called "LogForSale"
     Each event should accept one argument, the sku */
+  event LogForSale(uint indexed sku);
+  event LogSold(uint indexed sku);
+  event LogShipped(uint indexed sku);
+  event LogReceived(uint indexed sku);
 
 /* Create a modifer that checks if the msg.sender is the owner of the contract */
 
@@ -56,15 +71,17 @@ contract SupplyChain {
    so checking that Item.State == ForSale is not sufficient to check that an Item is for sale.
    Hint: What item properties will be non-zero when an Item has been added?
    */
-  modifier forSale
-  modifier sold
-  modifier shipped
-  modifier received
+  modifier forSale () { _;}
+  modifier sold () { _;}
+  modifier shipped () { _;}
+  modifier received () { _;}
 
 
   constructor() public {
     /* Here, set the owner as the person who instantiated the contract
        and set your skuCount to 0. */
+    owner = msg.sender;
+    skuCount = 0;
   }
 
   function addItem(string memory _name, uint _price) public returns(bool){
