@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 module.exports = {
-   compilers: {
-       solc: {
-	   version: '0.6.12'
-       }
-   },  
+//   compilers: {
+//       solc: '0.5.16'
+//   },
   networks: {
     development: {
       host: "localhost",
