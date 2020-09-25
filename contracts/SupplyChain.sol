@@ -97,7 +97,6 @@ contract SupplyChain {
     to Sold. Be careful, this function should use 3 modifiers to check if the item is for sale,
     if the buyer paid enough, and check the value after the function is called to make sure the buyer is
     refunded any excess ether sent. Remember to call the event associated with this function!*/
-
   function buyItem(uint sku)
     public
   {}

@@ -10,10 +10,27 @@ contract TestSupplyChain {
     // Test for failing conditions in this contracts:
     // https://truffleframework.com/tutorials/testing-for-throws-in-solidity-tests
 
+    SupplyChain public supplyChain;
+
+    // Run before each test function
+    function beforeEach() public {
+        supplyChain = new SupplyChain();
+	supplyChain.addItem("widget", 1000);
+    }
+
     // buyItem
 
     // test for failure if user does not send enough funds
+    //function testBuyerSendsNotEnoughFunds() public {
+    //function testBuyerSendsNotEnoughFunds() internal {
+    function testBuyerSendsNotEnoughFunds() public payable {
+        (,, uint price,,,) = supplyChain.fetchItem(0);
+        require(msg.value >= price, "buyer should send enough funds");
+    }
+
     // test for purchasing an item that is not for Sale
+    function testPurchasedItemNotForSale() public {
+    }
 
     // shipItem
 
