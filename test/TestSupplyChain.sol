@@ -21,9 +21,10 @@ contract TestSupplyChain {
     // buyItem
 
     // test for failure if user does not send enough funds
-    //function testBuyerSendsNotEnoughFunds() public {
-    //function testBuyerSendsNotEnoughFunds() internal {
     function testBuyerSendsNotEnoughFunds() public payable {
+        supplyChain.buyItem(0, {value: 1});
+
+     
         (,, uint price,,,) = supplyChain.fetchItem(0);
         require(msg.value >= price, "buyer should send enough funds");
     }
