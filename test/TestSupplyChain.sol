@@ -31,9 +31,12 @@ contract TestSupplyChain {
     // https://truffleframework.com/tutorials/testing-for-throws-in-solidity-tests
 
     SupplyChain public supplyChain;
+    ThrowProxy public throwproxy;
 
     // Run before each test function
     function beforeEach() public {
+        throwProxy = new ThrowProxy(address(supplyChain));
+
         supplyChain = new SupplyChain();
         supplyChain.addItem("widget", 1000);
     }
@@ -42,7 +45,6 @@ contract TestSupplyChain {
 
     // test for failure if user does not send enough funds
     function testBuyerSendsNotEnoughFunds() public payable {
-        ThrowProxy throwProxy = new ThrowProxy(address(supplyChain));
 
         // prime the proxy
         SupplyChain(address(throwProxy)).buyItem(0);
