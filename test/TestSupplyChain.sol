@@ -5,6 +5,26 @@ import "truffle/Assert.sol";
 import "truffle/DeployedAddresses.sol";
 import "../contracts/SupplyChain.sol";
 
+// Proxy for testing Throws
+contract ThrowProxy {
+    address public target;
+    bytes data;
+
+    constructor(address _target) public {
+        target = _target;
+    }
+
+    // prime the data using fallback
+    function() external {
+        data = msg.data;
+    }
+
+    function execute() public returns(bool) {
+        (bool ret, ) = target.call(data);
+        return ret;
+    }
+}
+
 contract TestSupplyChain {
 
     // Test for failing conditions in this contracts:
@@ -15,23 +35,25 @@ contract TestSupplyChain {
     // Run before each test function
     function beforeEach() public {
         supplyChain = new SupplyChain();
-	supplyChain.addItem("widget", 1000);
+        supplyChain.addItem("widget", 1000);
     }
 
     // buyItem
 
     // test for failure if user does not send enough funds
     function testBuyerSendsNotEnoughFunds() public payable {
-        supplyChain.buyItem(0, {value: 1});
+        ThrowProxy throwProxy = new ThrowProxy(address(supplyChain));
 
-     
-        (,, uint price,,,) = supplyChain.fetchItem(0);
-        require(msg.value >= price, "buyer should send enough funds");
+        // prime the proxy
+        SupplyChain(address(throwProxy)).buyItem(0);
+
+        bool r = throwProxy.execute.gas(200000)();
+
+        Assert.isTrue(r, "buyer should send enough funds");
     }
 
     // test for purchasing an item that is not for Sale
-    function testPurchasedItemNotForSale() public {
-    }
+    // function testPurchasedItemNotForSale() public {}
 
     // shipItem
 
