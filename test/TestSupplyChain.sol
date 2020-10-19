@@ -9,36 +9,35 @@ import "../contracts/SupplyChain.sol";
 
 contract TestSupplyChain {
 
-    // Test for failing conditions in this contracts:
-    // https://truffleframework.com/tutorials/testing-for-throws-in-solidity-tests
-
-    uint public initialBalance = 2 ether;
+    uint public initialBalance = 1 ether;
     SupplyChain supplyChain;
-    ThrowProxy throwProxy;
+    UserAgent seller;
+    UserAgent buyer;
+
+    constructor() public payable {}
 
     // Run before each test
     function beforeEachAgain() public {
         supplyChain = new SupplyChain();
-        throwProxy = new ThrowProxy(address(supplyChain));
+        seller = new UserAgent();
+        buyer = new UserAgent();
+
+        address(buyer).transfer(100);
 
         // Common operations
-        supplyChain.addItem("lemmings", 500 ether);
-        supplyChain.addItem("widget", 50 wei);
+        seller.addItem(supplyChain, "lemming", 500 wei);
+        seller.addItem(supplyChain, "widget", 50 wei);
     }
 
     // buyItem
 
     // test for failure if user does not send enough funds
-    function testBuyerSendsNotEnoughFunds() public payable {
-        SupplyChain(address(throwProxy)).buyItem(0);
-        bool r = throwProxy.execute.gas(2000000)();
-        Assert.isFalse(r, "Should be false");
-    }
 
     // test for purchasing an item that is not for Sale
     function testPurchasedItemNotForSale() public {
-        SupplyChain(address(throwProxy)).buyItem(1);
-        bool r = throwProxy.execute.gas(2000000)();
+	bool r = buyer.buyItem(supplyChain, 5, 1000);
+        //SupplyChain(address(throwProxy)).buyItem(1);
+        //bool r = throwProxy.execute.gas(2000000)();
         Assert.isFalse(r, "Should be false");
     }
 
@@ -55,22 +54,32 @@ contract TestSupplyChain {
 }
 
 
-// Proxy for testing Throws
-contract ThrowProxy {
-    address public target;
-    bytes data;
+// Contract User
+contract UserAgent {
 
-    constructor(address _target) public {
-        target = _target;
+    constructor() public payable {}
+
+    function () external payable {}
+
+    function addItem(SupplyChain _supplyChain, string memory _item, uint _price) public {
+        _supplyChain.addItem(_item, _price);
     }
 
-    // prime the data using fallback
-    function() external {
-        data = msg.data;
+    function shipItem(SupplyChain _supplyChain, uint _sku) public {
+        _supplyChain.shipItem(_sku);
     }
 
-    function execute() public returns(bool) {
-        (bool ret, ) = target.call(data);
-        return ret;
+    function buyItem(SupplyChain _supplyChain, uint _sku, uint amount) public returns (bool) {
+        (bool success, ) = address(_supplyChain).call.value(amount)(abi.encodeWithSignature("buyItem(uint256)", _sku));
+        return success;
     }
+
+    function receiveItem(SupplyChain _supplyChain, uint _sku) public {
+        _supplyChain.receiveItem(_sku);
+    }
+
+    function fetchItem(SupplyChain _supplyChain, uint _sku) public {
+        (,,uint price,,,) = _supplyChain.fetchItem(_sku);
+    }
+
 }
