@@ -19,10 +19,11 @@ contract TestSupplyChain {
     // Run before each test
     function beforeEachAgain() public {
         supplyChain = new SupplyChain();
-        seller = new UserAgent();
-        buyer = new UserAgent();
+        seller = new UserAgent(supplyChain);
+        //buyer = new UserAgent();
+        buyer = new UserAgent(supplyChain);
 
-        address(buyer).transfer(100);
+        address(buyer).transfer(1000);
 
         // Common operations
         seller.addItem(supplyChain, "lemming", 500 wei);
@@ -32,13 +33,16 @@ contract TestSupplyChain {
     // buyItem
 
     // test for failure if user does not send enough funds
+    function testBuyerDidNotSendEnoughFunds() public {
+	bool r = buyer.buyItem(0, 100);
+        Assert.isFalse(r, "Buyer did not send enough funds");
+    }
+
 
     // test for purchasing an item that is not for Sale
     function testPurchasedItemNotForSale() public {
-	bool r = buyer.buyItem(supplyChain, 5, 1000);
-        //SupplyChain(address(throwProxy)).buyItem(1);
-        //bool r = throwProxy.execute.gas(2000000)();
-        Assert.isFalse(r, "Should be false");
+	bool r = buyer.buyItem(5, 1000);
+        Assert.isFalse(r, "Purchased item is not for sale");
     }
 
     // shipItem
@@ -57,7 +61,11 @@ contract TestSupplyChain {
 // Contract User
 contract UserAgent {
 
-    constructor() public payable {}
+    SupplyChain thisChain;
+    
+    constructor(SupplyChain _supplyChain) public payable {
+	thisChain = _supplyChain;
+    }
 
     function () external payable {}
 
@@ -69,8 +77,8 @@ contract UserAgent {
         _supplyChain.shipItem(_sku);
     }
 
-    function buyItem(SupplyChain _supplyChain, uint _sku, uint amount) public returns (bool) {
-        (bool success, ) = address(_supplyChain).call.value(amount)(abi.encodeWithSignature("buyItem(uint256)", _sku));
+    function buyItem(uint _sku, uint amount) public returns (bool) {
+        (bool success, ) = address(thisChain).call.value(amount)(abi.encodeWithSignature("buyItem(uint256)", _sku));
         return success;
     }
 
