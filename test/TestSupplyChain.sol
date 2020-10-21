@@ -17,7 +17,7 @@ contract TestSupplyChain {
     constructor() public payable {}
 
     // Run before each test
-    function beforeEachAgain() public {
+    function beforeEach() public {
         supplyChain = new SupplyChain();
         seller = new UserAgent(supplyChain);
         //buyer = new UserAgent();
