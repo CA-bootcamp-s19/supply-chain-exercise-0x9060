@@ -20,40 +20,60 @@ contract TestSupplyChain {
     function beforeEach() public {
         supplyChain = new SupplyChain();
         seller = new UserAgent(supplyChain);
-        //buyer = new UserAgent();
         buyer = new UserAgent(supplyChain);
 
         address(buyer).transfer(1000);
 
-        // Common operations
-        seller.addItem(supplyChain, "lemming", 500 wei);
-        seller.addItem(supplyChain, "widget", 50 wei);
+        // Using widget item for all tests
+        seller.addItem("widget", 500);
     }
 
-    // buyItem
+    // buyItem Tests
 
     // test for failure if user does not send enough funds
     function testBuyerDidNotSendEnoughFunds() public {
-	bool r = buyer.buyItem(0, 100);
+	bool r = buyer.buyItem(0, 10);
         Assert.isFalse(r, "Buyer did not send enough funds");
     }
 
 
     // test for purchasing an item that is not for Sale
     function testPurchasedItemNotForSale() public {
-	bool r = buyer.buyItem(5, 1000);
+	bool r = buyer.buyItem(1, 1000);
         Assert.isFalse(r, "Purchased item is not for sale");
     }
 
-    // shipItem
+    // shipItem Tests
 
     // test for calls that are made by not the seller
+    function testItemShippedByNotSeller() public {
+	buyer.buyItem(0, 500);
+	bool r = buyer.shipItem(0);
+        Assert.isFalse(r, "Purchased item must be shipped by seller");
+    }
+    
     // test for trying to ship an item that is not marked Sold
-
-    // receiveItem
+    function testShippedItemIsNotSold() public {
+	bool r = seller.shipItem(0);
+        Assert.isFalse(r, "Shipped item must be sold first");
+    }
+ 
+    // receiveItem Tests
 
     // test calling the function from an address that is not the buyer
+    function testItemReceivedByNotBuyer() public {
+	buyer.buyItem(0, 500);
+	seller.shipItem(0);
+	bool r = seller.receiveItem(0);
+        Assert.isFalse(r, "Shipped item can only be received by buyer");
+    }
+
     // test calling the function on an item not marked Shipped
+    function testReceivedItemIsNotShipped() public {
+	buyer.buyItem(0, 500);
+	bool r = buyer.receiveItem(0);
+        Assert.isFalse(r, "Only shipped items can be received");
+    }
 
 }
 
@@ -69,25 +89,24 @@ contract UserAgent {
 
     function () external payable {}
 
-    function addItem(SupplyChain _supplyChain, string memory _item, uint _price) public {
-        _supplyChain.addItem(_item, _price);
+    function addItem(string memory _name, uint _price) public returns(bool) {
+        (bool success, ) = address(thisChain).call(abi.encodeWithSignature("addItem(string,uint256)", _name, _price));
+        return success;
     }
 
-    function shipItem(SupplyChain _supplyChain, uint _sku) public {
-        _supplyChain.shipItem(_sku);
+    function shipItem(uint _sku) public returns(bool) {
+        (bool success, ) = address(thisChain).call(abi.encodeWithSignature("shipItem(uint256)", _sku));
+        return success;
     }
 
-    function buyItem(uint _sku, uint amount) public returns (bool) {
+    function buyItem(uint _sku, uint amount) public returns(bool) {
         (bool success, ) = address(thisChain).call.value(amount)(abi.encodeWithSignature("buyItem(uint256)", _sku));
         return success;
     }
 
-    function receiveItem(SupplyChain _supplyChain, uint _sku) public {
-        _supplyChain.receiveItem(_sku);
-    }
-
-    function fetchItem(SupplyChain _supplyChain, uint _sku) public {
-        (,,uint price,,,) = _supplyChain.fetchItem(_sku);
+    function receiveItem(uint _sku) public returns(bool) {
+        (bool success, ) = address(thisChain).call(abi.encodeWithSignature("receiveItem(uint256)", _sku));
+        return success;
     }
 
 }
