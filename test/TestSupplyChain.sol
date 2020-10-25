@@ -5,66 +5,108 @@ import "truffle/Assert.sol";
 import "truffle/DeployedAddresses.sol";
 import "../contracts/SupplyChain.sol";
 
-// Proxy for testing Throws
-contract ThrowProxy {
-    address public target;
-    bytes data;
-
-    constructor(address _target) public {
-        target = _target;
-    }
-
-    // prime the data using fallback
-    function() external {
-        data = msg.data;
-    }
-
-    function execute() public returns(bool) {
-        (bool ret, ) = target.call(data);
-        return ret;
-    }
-}
+/// TESTING
 
 contract TestSupplyChain {
 
-    // Test for failing conditions in this contracts:
-    // https://truffleframework.com/tutorials/testing-for-throws-in-solidity-tests
+    uint public initialBalance = 1 ether;
+    SupplyChain supplyChain;
+    UserAgent seller;
+    UserAgent buyer;
 
-    SupplyChain public supplyChain;
-    ThrowProxy public throwproxy;
+    constructor() public payable {}
 
-    // Run before each test function
+    // Run before each test
     function beforeEach() public {
-        throwProxy = new ThrowProxy(address(supplyChain));
-
         supplyChain = new SupplyChain();
-        supplyChain.addItem("widget", 1000);
+        seller = new UserAgent(supplyChain);
+        buyer = new UserAgent(supplyChain);
+
+        address(buyer).transfer(1000);
+
+        // Using widget item for all tests
+        seller.addItem("widget", 500);
     }
 
-    // buyItem
+    // buyItem Tests
 
     // test for failure if user does not send enough funds
-    function testBuyerSendsNotEnoughFunds() public payable {
-
-        // prime the proxy
-        SupplyChain(address(throwProxy)).buyItem(0);
-
-        bool r = throwProxy.execute.gas(200000)();
-
-        Assert.isTrue(r, "buyer should send enough funds");
+    function testBuyerDidNotSendEnoughFunds() public {
+	bool r = buyer.buyItem(0, 10);
+        Assert.isFalse(r, "Buyer did not send enough funds");
     }
 
-    // test for purchasing an item that is not for Sale
-    // function testPurchasedItemNotForSale() public {}
 
-    // shipItem
+    // test for purchasing an item that is not for Sale
+    function testPurchasedItemNotForSale() public {
+	bool r = buyer.buyItem(1, 1000);
+        Assert.isFalse(r, "Purchased item is not for sale");
+    }
+
+    // shipItem Tests
 
     // test for calls that are made by not the seller
+    function testItemShippedByNotSeller() public {
+	buyer.buyItem(0, 500);
+	bool r = buyer.shipItem(0);
+        Assert.isFalse(r, "Purchased item must be shipped by seller");
+    }
+    
     // test for trying to ship an item that is not marked Sold
-
-    // receiveItem
+    function testShippedItemIsNotSold() public {
+	bool r = seller.shipItem(0);
+        Assert.isFalse(r, "Shipped item must be sold first");
+    }
+ 
+    // receiveItem Tests
 
     // test calling the function from an address that is not the buyer
+    function testItemReceivedByNotBuyer() public {
+	buyer.buyItem(0, 500);
+	seller.shipItem(0);
+	bool r = seller.receiveItem(0);
+        Assert.isFalse(r, "Shipped item can only be received by buyer");
+    }
+
     // test calling the function on an item not marked Shipped
+    function testReceivedItemIsNotShipped() public {
+	buyer.buyItem(0, 500);
+	bool r = buyer.receiveItem(0);
+        Assert.isFalse(r, "Only shipped items can be received");
+    }
+
+}
+
+
+// Contract User
+contract UserAgent {
+
+    SupplyChain thisChain;
+    
+    constructor(SupplyChain _supplyChain) public payable {
+	thisChain = _supplyChain;
+    }
+
+    function () external payable {}
+
+    function addItem(string memory _name, uint _price) public returns(bool) {
+        (bool success, ) = address(thisChain).call(abi.encodeWithSignature("addItem(string,uint256)", _name, _price));
+        return success;
+    }
+
+    function shipItem(uint _sku) public returns(bool) {
+        (bool success, ) = address(thisChain).call(abi.encodeWithSignature("shipItem(uint256)", _sku));
+        return success;
+    }
+
+    function buyItem(uint _sku, uint amount) public returns(bool) {
+        (bool success, ) = address(thisChain).call.value(amount)(abi.encodeWithSignature("buyItem(uint256)", _sku));
+        return success;
+    }
+
+    function receiveItem(uint _sku) public returns(bool) {
+        (bool success, ) = address(thisChain).call(abi.encodeWithSignature("receiveItem(uint256)", _sku));
+        return success;
+    }
 
 }
